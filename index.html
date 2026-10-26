@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>R & B · 我们的时光</title>
+<style>
+  :root {
+    --pink: #f4729d;
+    --pink-deep: #e8577d;
+    --rose: #fb7185;
+    --peach: #fecaca;
+    --cream: #fff5f6;
+    --ink: #5b3a44;
+    --ink-soft: #9a7280;
+    --card: #ffffff;
+    --shadow: 0 10px 30px rgba(244, 114, 157, .14);
+    --radius: 20px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+      "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(1200px 600px at 15% -10%, #ffe0ea 0%, transparent 60%),
+      radial-gradient(1000px 700px at 110% 0%, #ffe9f0 0%, transparent 55%),
+      linear-gradient(180deg, #fff7f8 0%, #ffeef2 45%, #fff7f8 100%);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* 漂浮爱心背景 */
+  #hearts-bg {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
+  }
+  .float-heart {
+    position: absolute; bottom: -8vh;
+    color: rgba(244, 114, 157, .18);
+    animation: rise linear infinite;
+    user-select: none;
+  }
+  @keyframes rise {
+    0%   { transform: translateY(0) rotate(0deg) scale(.8); opacity: 0; }
+    10%  { opacity: 1; }
+    100% { transform: translateY(-115vh) rotate(30deg) scale(1.15); opacity: 0; }
+  }
+
+  .wrap { position: relative; z-index: 1; max-width: 760px; margin: 0 auto; padding: 14px 16px 90px; }
+
+  /* 顶部 */
+  header.top {
+    text-align: center; padding: 10px 0 4px;
+  }
+  header.top .names {
+    font-size: clamp(1.35rem, 5vw, 1.7rem); font-weight: 800; letter-spacing: 1px;
+  }
+  header.top .names .heart { color: var(--rose); display: inline-block; animation: beat 1.4s ease-in-out infinite; }
+  @keyframes beat {
+    0%, 100% { transform: scale(1); }
+    25% { transform: scale(1.18); }
+    45% { transform: scale(.95); }
+    60% { transform: scale(1.1); }
+  }
+  header.top .since { color: var(--ink-soft); font-size: .82rem; margin-top: 3px; letter-spacing: 2px; }
+
+  /* 纪念日卡片 */
+  .card {
+    background: var(--card); border-radius: var(--radius);
+    box-shadow: var(--shadow); border: 1px solid rgba(244,114,157,.12);
+    padding: 22px 18px; margin-top: 14px;
+  }
+  .hero { text-align: center; }
+  .hero .label { font-size: .9rem; color: var(--ink-soft); letter-spacing: 3px; }
+  .hero .days-wrap {
+    margin: 10px 0 4px; display: flex; align-items: baseline; justify-content: center; gap: 6px;
+  }
+  .hero .days {
+    font-size: clamp(3.4rem, 16vw, 5rem); font-weight: 900; line-height: 1;
+    background: linear-gradient(135deg, var(--pink-deep), var(--rose), #fda4af);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .hero .days-unit { font-size: 1.2rem; font-weight: 700; color: var(--pink-deep); }
+  .hero .timer { font-variant-numeric: tabular-nums; color: var(--ink-soft); font-size: .95rem; margin-top: 8px; }
+  .hero .timer b { color: var(--pink-deep); font-weight: 800; }
+
+  /* 想念按钮 */
+  .miss-card { text-align: center; }
+  .miss-card .miss-note { color: var(--ink-soft); font-size: .88rem; margin-bottom: 14px; }
+  .miss-btn {
+    position: relative; width: 150px; height: 150px; border-radius: 50%;
+    border: none; cursor: pointer; color: #fff; font-size: 4rem;
+    background: radial-gradient(circle at 30% 25%, #fda4af, var(--rose) 60%, var(--pink-deep));
+    box-shadow: 0 14px 34px rgba(232, 87, 125, .42);
+    transition: transform .12s ease, box-shadow .12s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .miss-btn:active { transform: scale(.9); box-shadow: 0 8px 20px rgba(232,87,125,.35); }
+  .miss-btn:hover { transform: scale(1.04); }
+  .miss-count { margin-top: 14px; font-size: 1.05rem; color: var(--ink); font-weight: 600; }
+  .miss-count b { color: var(--pink-deep); font-size: 1.35rem; margin: 0 3px; }
+
+  /* 爱心秀 */
+  .heart-show-card { text-align: center; }
+  .pixel-heart {
+    --unit: clamp(22px, 7vw, 40px);
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    margin: 10px auto 4px; width: fit-content; max-width: 100%;
+    user-select: none; -webkit-user-select: none;
+  }
+  .heart-row { display: flex; gap: 3px; }
+  .tile, .heart-gap { flex: 0 0 auto; }
+  .heart-gap { background: transparent; }
+  .tile {
+    height: 44px; display: flex; align-items: center; justify-content: center;
+    padding: 0 4px; text-align: center; line-height: 1.15;
+    font-size: clamp(10px, 3vw, 14px); font-weight: 700;
+    color: transparent; border-radius: 10px; white-space: nowrap; overflow: hidden;
+    background: rgba(244, 114, 157, .07);
+    border: 1px dashed rgba(244, 114, 157, .28);
+  }
+  .tile.lit {
+    background: linear-gradient(135deg, #ffd9e2, #ffb0c5);
+    border: 1px solid transparent;
+    color: #c2274f;
+    box-shadow: 0 2px 6px rgba(232, 87, 125, .25);
+    animation: pop .35s ease;
+  }
+  @keyframes pop {
+    0% { transform: scale(0); } 70% { transform: scale(1.1); } 100% { transform: scale(1); }
+  }
+  .heart-hint { color: var(--ink-soft); font-size: .8rem; margin: 12px 0 2px; }
+
+  .burst-heart {
+    position: fixed; z-index: 40; pointer-events: none; font-size: 1.4rem;
+    animation: burst 1s ease-out forwards;
+  }
+  @keyframes burst {
+    0%   { transform: translate(0,0) scale(.6); opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) scale(1.3); opacity: 0; }
+  }
+
+  /* 标签栏 */
+  .tabs {
+    position: sticky; top: 8px; z-index: 20; margin-top: 16px;
+    display: flex; gap: 6px; background: rgba(255,255,255,.82);
+    backdrop-filter: blur(10px); border-radius: 999px; padding: 6px;
+    box-shadow: 0 6px 20px rgba(244,114,157,.12);
+    border: 1px solid rgba(244,114,157,.14);
+  }
+  .tabs button {
+    flex: 1; border: none; background: transparent; cursor: pointer;
+    padding: 10px 6px; border-radius: 999px; font-size: .95rem; color: var(--ink-soft);
+    font-weight: 600; transition: all .2s ease;
+  }
+  .tabs button.active {
+    background: linear-gradient(135deg, var(--rose), var(--pink-deep));
+    color: #fff; box-shadow: 0 6px 16px rgba(232,87,125,.35);
+  }
+
+  .panel { display: none; }
+  .panel.active { display: block; animation: fade .35s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  .section-title { font-size: 1.1rem; font-weight: 800; margin: 6px 2px 12px; }
+  .section-title span { color: var(--pink-deep); }
+
+  /* 表单 */
+  .form-card label { display: block; font-size: .85rem; color: var(--ink-soft); margin: 10px 0 6px; font-weight: 600; }
+  input[type=date], input[type=text], textarea {
+    width: 100%; padding: 12px 14px; border-radius: 14px; font-size: 1rem;
+    border: 1.5px solid #f6d9e2; background: #fff; color: var(--ink);
+    font-family: inherit; outline: none; transition: border .2s, box-shadow .2s;
+  }
+  input:focus, textarea:focus { border-color: var(--rose); box-shadow: 0 0 0 3px rgba(251,113,133,.15); }
+  textarea { resize: vertical; min-height: 96px; }
+
+  .btn {
+    border: none; cursor: pointer; border-radius: 14px; font-weight: 700; font-size: .98rem;
+    padding: 13px 18px; color: #fff; font-family: inherit;
+    background: linear-gradient(135deg, var(--rose), var(--pink-deep));
+    box-shadow: 0 8px 20px rgba(232,87,125,.35);
+    transition: transform .12s ease, box-shadow .12s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn.ghost {
+    background: #fff; color: var(--pink-deep); border: 1.5px solid var(--rose);
+    box-shadow: none;
+  }
+  .btn.full { width: 100%; margin-top: 14px; }
+
+  /* 心情选择 */
+  .moods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .mood {
+    border: 1.5px solid #f6d9e2; background: #fff; border-radius: 14px;
+    padding: 10px 4px; cursor: pointer; text-align: center; font-family: inherit;
+    transition: all .15s ease; color: var(--ink);
+  }
+  .mood .emoji { font-size: 1.5rem; display: block; }
+  .mood .name { font-size: .82rem; margin-top: 4px; }
+  .mood.selected { border-color: var(--rose); background: #fff1f4; box-shadow: 0 0 0 3px rgba(251,113,133,.12); }
+
+  /* 列表项 */
+  .item {
+    background: #fff; border-radius: 16px; padding: 14px 16px; margin-bottom: 12px;
+    border: 1px solid rgba(244,114,157,.1); box-shadow: 0 4px 14px rgba(244,114,157,.08);
+    display: flex; gap: 12px; align-items: flex-start;
+  }
+  .item .mood-big { font-size: 1.7rem; line-height: 1; }
+  .item .body { flex: 1; min-width: 0; }
+  .item .meta { font-size: .78rem; color: var(--ink-soft); margin-bottom: 4px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .item .meta .tag {
+    background: #fff1f4; color: var(--pink-deep); border-radius: 999px;
+    padding: 1px 8px; font-weight: 700;
+  }
+  .item .text { white-space: pre-wrap; word-break: break-word; font-size: .96rem; line-height: 1.6; }
+  .item .del {
+    border: none; background: transparent; color: #d7a3b3; cursor: pointer;
+    font-size: 1.1rem; padding: 4px 6px; border-radius: 8px; line-height: 1;
+  }
+  .item .del:hover { color: var(--rose); background: #fff1f4; }
+
+  .diff-badge {
+    font-size: .8rem; font-weight: 700; color: #fff; background: linear-gradient(135deg, var(--rose), var(--pink-deep));
+    border-radius: 999px; padding: 4px 12px; white-space: nowrap; align-self: center;
+  }
+
+  .empty { text-align: center; color: var(--ink-soft); padding: 30px 10px; font-size: .92rem; }
+  .empty .e-emoji { font-size: 2.2rem; display: block; margin-bottom: 8px; }
+
+  /* 相册 */
+  .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+  .photo {
+    position: relative; aspect-ratio: 1/1; border-radius: 14px; overflow: hidden;
+    box-shadow: 0 4px 14px rgba(244,114,157,.16); background: #ffe9f0;
+  }
+  .photo img { width: 100%; height: 100%; object-fit: cover; display: block; cursor: zoom-in; }
+  .photo .del {
+    position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; border-radius: 50%;
+    border: none; background: rgba(0,0,0,.45); color: #fff; cursor: pointer; font-size: .95rem;
+    display: grid; place-items: center;
+  }
+  .photo .cap { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(transparent, rgba(0,0,0,.55)); color: #fff; font-size: .72rem; padding: 14px 8px 5px; }
+
+  /* 照片预览弹层 */
+  .lightbox {
+    position: fixed; inset: 0; z-index: 50; background: rgba(60,25,35,.88);
+    display: none; align-items: center; justify-content: center; padding: 20px; cursor: zoom-out;
+  }
+  .lightbox.open { display: flex; }
+  .lightbox img { max-width: 100%; max-height: 100%; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+
+  /* 底部 */
+  footer { text-align: center; margin-top: 30px; color: var(--ink-soft); font-size: .8rem; line-height: 1.8; }
+  footer .data-ops { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 8px; }
+  footer .btn { padding: 8px 14px; font-size: .82rem; }
+
+  @media (min-width: 700px) {
+    .moods { grid-template-columns: repeat(6, 1fr); }
+    .gallery { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+  }
+</style>
+</head>
+<body>
+  <div id="hearts-bg"></div>
+
+  <div class="wrap">
+    <header class="top">
+      <div class="names">R <span class="heart">&</span> B</div>
+      <div class="since">我们的恋爱纪念日 · 2023.02.25</div>
+    </header>
+
+    <!-- 纪念日 -->
+    <div class="card hero">
+      <div class="label">我们已经在一起</div>
+      <div class="days-wrap">
+        <span class="days" id="days">0</span>
+        <span class="days-unit">天</span>
+      </div>
+      <div class="timer">相伴时长 · <b id="timer">00:00:00</b></div>
+    </div>
+
+    <!-- 爱心秀 -->
+    <div class="card heart-show-card">
+      <div class="section-title">爱心秀 <span>💗</span></div>
+      <div class="pixel-heart" id="pixelHeart"></div>
+      <div class="heart-hint">每一格都是一句关心，爱心会一点一点亮起来～</div>
+      <button class="btn full" id="replayHeart">重新点亮 ✨</button>
+    </div>
+
+    <!-- 想念按钮 -->
+    <div class="card miss-card">
+      <div class="miss-note">想念的时候，就点一下 ❤</div>
+      <button class="miss-btn" id="missBtn" title="我想你">💗</button>
+      <div class="miss-count">已经想你了 <b id="missCount">0</b> 次</div>
+    </div>
+
+    <!-- 标签 -->
+    <nav class="tabs" id="tabs">
+      <button class="active" data-tab="diary">📖 日记</button>
+      <button data-tab="meet">📅 见面</button>
+      <button data-tab="photo">📷 相册</button>
+    </nav>
+
+    <!-- 日记 -->
+    <section class="panel active" id="panel-diary">
+      <div class="card form-card">
+        <div class="section-title">写一篇 <span>小日记</span></div>
+        <label>今天的心情</label>
+        <div class="moods" id="moods"></div>
+        <label>想说的话</label>
+        <textarea id="diaryText" placeholder="记录我们的点点滴滴…"></textarea>
+        <button class="btn full" id="saveDiary">保存日记 💌</button>
+      </div>
+      <div class="section-title" style="margin-top:20px">我们的 <span>日记</span></div>
+      <div id="diaryList"></div>
+    </section>
+
+    <!-- 见面 -->
+    <section class="panel" id="panel-meet">
+      <div class="card form-card">
+        <div class="section-title">记录一次 <span>见面</span></div>
+        <label>见面日期</label>
+        <input type="date" id="meetDate" />
+        <label>备注（可选）</label>
+        <input type="text" id="meetNote" placeholder="比如：一起去吃了火锅 🍲" maxlength="60" />
+        <button class="btn full" id="saveMeet">添加见面记录 📅</button>
+      </div>
+      <div class="section-title" style="margin-top:20px">我们的 <span>见面</span></div>
+      <div id="meetList"></div>
+    </section>
+
+    <!-- 相册 -->
+    <section class="panel" id="panel-photo">
+      <div class="card form-card">
+        <div class="section-title">上传 <span>照片</span></div>
+        <input type="file" id="photoInput" accept="image/*" multiple />
+        <button class="btn full" id="savePhoto">保存照片 📷</button>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin-top:10px">照片会保存在本机浏览器里，自动压缩以节省空间。</p>
+      </div>
+      <div class="section-title" style="margin-top:20px">我们的 <span>相册</span></div>
+      <div class="gallery" id="gallery"></div>
+    </section>
+
+    <footer>
+      <div>R & B · 我们的甜蜜时光</div>
+      <div class="data-ops">
+        <button class="btn ghost" id="exportBtn">导出备份</button>
+        <button class="btn ghost" id="importBtn">导入备份</button>
+        <input type="file" id="importFile" accept="application/json" style="display:none" />
+        <button class="btn ghost" id="clearBtn">清空数据</button>
+      </div>
+      <div style="margin-top:8px">数据保存在当前浏览器，请勿清除浏览器数据以免丢失。</div>
+    </footer>
+  </div>
+
+  <div class="lightbox" id="lightbox"><img id="lightboxImg" alt="" /></div>
+
+<script>
+(function () {
+  "use strict";
+
+  const ANNIVERSARY = new Date(2023, 1, 25, 0, 0, 0); // 2023-02-25
+  const DAY = 86400000;
+
+  const KEYS = { miss: "love_miss", meetings: "love_meetings", diaries: "love_diaries", photos: "love_photos" };
+  const MOODS = [
+    { key: "开心", emoji: "😄" },
+    { key: "甜蜜", emoji: "🥰" },
+    { key: "平静", emoji: "😌" },
+    { key: "想念", emoji: "🥺" },
+    { key: "伤心", emoji: "😢" },
+    { key: "生气", emoji: "😤" }
+  ];
+
+  function load(key, fallback) {
+    try { const v = localStorage.getItem(key); return v == null ? fallback : JSON.parse(v); }
+    catch (e) { return fallback; }
+  }
+  function save(key, val) {
+    try { localStorage.setItem(key, JSON.stringify(val)); return true; }
+    catch (e) {
+      if (e.name === "QuotaExceededError" || e.code === 22) { alert("存储空间已满，请删除一些照片再试。"); }
+      else { alert("保存失败：" + e.message); }
+      return false;
+    }
+  }
+
+  let state = {
+    miss: load(KEYS.miss, 0),
+    meetings: load(KEYS.meetings, []),
+    diaries: load(KEYS.diaries, []),
+    photos: load(KEYS.photos, [])
+  };
+
+  /* ---------- 背景漂浮爱心 ---------- */
+  function seedHearts() {
+    const box = document.getElementById("hearts-bg");
+    const emojis = ["❤", "💗", "💕", "💖"];
+    for (let i = 0; i < 14; i++) {
+      const s = document.createElement("span");
+      s.className = "float-heart";
+      s.textContent = emojis[i % emojis.length];
+      s.style.left = (Math.random() * 100) + "vw";
+      s.style.fontSize = (14 + Math.random() * 22) + "px";
+      s.style.animationDuration = (14 + Math.random() * 16) + "s";
+      s.style.animationDelay = (Math.random() * 14) + "s";
+      box.appendChild(s);
+    }
+  }
+
+  /* ---------- 纪念日计时 ---------- */
+  function pad(n) { return String(n).padStart(2, "0"); }
+  function tick() {
+    const now = Date.now();
+    const diff = Math.max(0, now - ANNIVERSARY.getTime());
+    const totalSec = Math.floor(diff / 1000);
+    const days = Math.floor(totalSec / 86400) + 1;
+    const h = Math.floor((totalSec % 86400) / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    document.getElementById("days").textContent = days;
+    document.getElementById("timer").textContent = pad(h) + ":" + pad(m) + ":" + pad(s);
+  }
+
+  /* ---------- 想念按钮 ---------- */
+  function bindMiss() {
+    const btn = document.getElementById("missBtn");
+    const countEl = document.getElementById("missCount");
+    countEl.textContent = state.miss;
+    btn.addEventListener("click", function () {
+      state.miss += 1;
+      save(KEYS.miss, state.miss);
+      countEl.textContent = state.miss;
+      burstHearts(btn);
+    });
+  }
+  function burstHearts(anchor) {
+    const r = anchor.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    const emojis = ["💗", "💕", "❤️", "💖", "😘"];
+    for (let i = 0; i < 8; i++) {
+      const s = document.createElement("span");
+      s.className = "burst-heart";
+      s.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      s.style.left = cx + "px";
+      s.style.top = cy + "px";
+      const ang = (Math.random() * Math.PI * 2);
+      const dist = 60 + Math.random() * 90;
+      s.style.setProperty("--dx", Math.cos(ang) * dist + "px");
+      s.style.setProperty("--dy", Math.sin(ang) * dist - 40 + "px");
+      document.body.appendChild(s);
+      setTimeout(function () { s.remove(); }, 1000);
+    }
+  }
+
+  /* ---------- 爱心秀 ---------- */
+  const HEART = [
+    [2, ["想",1], 3, ["你",1], 2],
+    [1, ["抱抱你",3], 1, ["乖乖",3], 1],
+    [["按时吃饭",4], 1, ["天天开心",4]],
+    [["多喝热水",3], ["一直爱你",3], ["注意休息",3]],
+    [1, ["早睡",2], ["别熬夜",3], ["多喝水",2], 1],
+    [2, ["记得带伞 辛苦啦",5], 2],
+    [3, ["早点回家",3], 3],
+    [4, ["爱",1], 4]
+  ];
+
+  let heartCells = [];
+  let lightToken = 0;
+
+  function lightHeart() {
+    const token = ++lightToken;
+    heartCells.forEach(function (el) { el.classList.remove("lit"); });
+    const order = heartCells.slice().sort(function () { return Math.random() - 0.5; });
+    order.forEach(function (el, i) {
+      setTimeout(function () {
+        if (token !== lightToken) return;
+        el.classList.add("lit");
+      }, i * 90);
+    });
+  }
+
+  function buildHeartGrid() {
+    const box = document.getElementById("pixelHeart");
+    box.innerHTML = "";
+    heartCells = [];
+    HEART.forEach(function (rowItems) {
+      const row = document.createElement("div");
+      row.className = "heart-row";
+      rowItems.forEach(function (item) {
+        const el = document.createElement("div");
+        if (Array.isArray(item)) {
+          el.className = "tile";
+          el.textContent = item[0];
+          el.style.width = "calc(var(--unit) * " + item[1] + ")";
+          heartCells.push(el);
+        } else {
+          el.className = "heart-gap";
+          el.style.width = "calc(var(--unit) * " + item + ")";
+        }
+        row.appendChild(el);
+      });
+      box.appendChild(row);
+    });
+  }
+
+  function initHeartShow() {
+    buildHeartGrid();
+    document.getElementById("replayHeart").addEventListener("click", lightHeart);
+    lightHeart();
+  }
+
+  /* ---------- 标签切换 ---------- */
+  function bindTabs() {
+    const tabs = document.querySelectorAll("#tabs button");
+    tabs.forEach(function (t) {
+      t.addEventListener("click", function () {
+        tabs.forEach(function (x) { x.classList.remove("active"); });
+        t.classList.add("active");
+        document.querySelectorAll(".panel").forEach(function (p) { p.classList.remove("active"); });
+        document.getElementById("panel-" + t.dataset.tab).classList.add("active");
+      });
+    });
+  }
+
+  /* ---------- 心情 ---------- */
+  let selectedMood = MOODS[0].key;
+  function renderMoods() {
+    const box = document.getElementById("moods");
+    box.innerHTML = "";
+    MOODS.forEach(function (m) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "mood" + (m.key === selectedMood ? " selected" : "");
+      b.innerHTML = '<span class="emoji">' + m.emoji + '</span><span class="name">' + m.key + "</span>";
+      b.addEventListener("click", function () {
+        selectedMood = m.key;
+        renderMoods();
+      });
+      box.appendChild(b);
+    });
+  }
+
+  /* ---------- 日记 ---------- */
+  function fmtDateTime(ts) {
+    const d = new Date(ts);
+    return d.getFullYear() + "." + pad(d.getMonth() + 1) + "." + pad(d.getDate()) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes());
+  }
+  function moodOf(key) { return MOODS.find(function (m) { return m.key === key; }) || MOODS[0]; }
+
+  function renderDiaries() {
+    const list = document.getElementById("diaryList");
+    if (!state.diaries.length) {
+      list.innerHTML = '<div class="empty"><span class="e-emoji">📝</span>还没有日记，写一篇记录此刻吧～</div>';
+      return;
+    }
+    const items = state.diaries.slice().sort(function (a, b) { return b.ts - a.ts; });
+    list.innerHTML = "";
+    items.forEach(function (d, idx) {
+      const realIdx = state.diaries.indexOf(d);
+      const m = moodOf(d.mood);
+      const el = document.createElement("div");
+      el.className = "item";
+      el.innerHTML =
+        '<div class="mood-big">' + m.emoji + '</div>' +
+        '<div class="body">' +
+          '<div class="meta"><span class="tag">' + m.key + '</span><span>' + fmtDateTime(d.ts) + "</span></div>" +
+          '<div class="text">' + escapeHtml(d.text) + "</div>" +
+        "</div>" +
+        '<button class="del" title="删除">✕</button>';
+      el.querySelector(".del").addEventListener("click", function () {
+        if (confirm("确定删除这篇日记吗？")) { state.diaries.splice(realIdx, 1); save(KEYS.diaries, state.diaries); renderDiaries(); }
+      });
+      list.appendChild(el);
+    });
+  }
+
+  function bindDiary() {
+    document.getElementById("saveDiary").addEventListener("click", function () {
+      const text = document.getElementById("diaryText").value.trim();
+      if (!text) { alert("写点什么再保存吧～"); return; }
+      state.diaries.push({ ts: Date.now(), mood: selectedMood, text: text });
+      save(KEYS.diaries, state.diaries);
+      document.getElementById("diaryText").value = "";
+      renderDiaries();
+    });
+  }
+
+  /* ---------- 见面 ---------- */
+  function renderMeetings() {
+    const list = document.getElementById("meetList");
+    if (!state.meetings.length) {
+      list.innerHTML = '<div class="empty"><span class="e-emoji">📅</span>还没有见面记录，添加第一次见面吧～</div>';
+      return;
+    }
+    const items = state.meetings.slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    list.innerHTML = "";
+    items.forEach(function (m, idx) {
+      const realIdx = state.meetings.indexOf(m);
+      const d = new Date(m.date + "T00:00:00");
+      const diffDays = Math.floor((today - d) / DAY);
+      let diffText;
+      if (diffDays === 0) diffText = "今天见面";
+      else if (diffDays === 1) diffText = "昨天见面";
+      else if (diffDays > 0) diffText = diffDays + " 天前";
+      else diffText = "还有 " + (-diffDays) + " 天";
+      const el = document.createElement("div");
+      el.className = "item";
+      el.innerHTML =
+        '<div class="mood-big">💑</div>' +
+        '<div class="body">' +
+          '<div class="meta"><span class="tag">见面</span><span>' + m.date + "</span></div>" +
+          (m.note ? '<div class="text">' + escapeHtml(m.note) + "</div>" : "") +
+        "</div>" +
+        '<span class="diff-badge">' + diffText + "</span>" +
+        '<button class="del" title="删除">✕</button>';
+      el.querySelector(".del").addEventListener("click", function () {
+        if (confirm("确定删除这条见面记录吗？")) { state.meetings.splice(realIdx, 1); save(KEYS.meetings, state.meetings); renderMeetings(); }
+      });
+      list.appendChild(el);
+    });
+  }
+
+  function bindMeet() {
+    const dateInput = document.getElementById("meetDate");
+    dateInput.value = new Date().toISOString().slice(0, 10);
+    document.getElementById("saveMeet").addEventListener("click", function () {
+      const date = dateInput.value;
+      if (!date) { alert("请选择见面日期。"); return; }
+      const note = document.getElementById("meetNote").value.trim();
+      state.meetings.push({ date: date, note: note });
+      save(KEYS.meetings, state.meetings);
+      document.getElementById("meetNote").value = "";
+      renderMeetings();
+    });
+  }
+
+  /* ---------- 相册 ---------- */
+  function resizeImage(file, maxDim, quality) {
+    return new Promise(function (resolve, reject) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const img = new Image();
+        img.onload = function () {
+          const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+          const w = Math.round(img.width * scale);
+          const h = Math.round(img.height * scale);
+          const canvas = document.createElement("canvas");
+          canvas.width = w; canvas.height = h;
+          canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function renderPhotos() {
+    const g = document.getElementById("gallery");
+    if (!state.photos.length) {
+      g.innerHTML = '<div class="empty" style="grid-column:1/-1"><span class="e-emoji">📷</span>还没有照片，上传我们的合照吧～</div>';
+      return;
+    }
+    g.innerHTML = "";
+    state.photos.forEach(function (p, idx) {
+      const el = document.createElement("div");
+      el.className = "photo";
+      const d = new Date(p.ts);
+      const cap = p.name ? p.name : (d.getFullYear() + "." + pad(d.getMonth() + 1) + "." + pad(d.getDate()));
+      el.innerHTML =
+        '<img src="' + p.data + '" alt="照片" />' +
+        '<button class="del" title="删除">✕</button>' +
+        '<div class="cap">' + escapeHtml(cap) + "</div>";
+      el.querySelector("img").addEventListener("click", function () {
+        document.getElementById("lightboxImg").src = p.data;
+        document.getElementById("lightbox").classList.add("open");
+      });
+      el.querySelector(".del").addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        if (confirm("确定删除这张照片吗？")) { state.photos.splice(idx, 1); save(KEYS.photos, state.photos); renderPhotos(); }
+      });
+      g.appendChild(el);
+    });
+  }
+
+  function bindPhotos() {
+    const input = document.getElementById("photoInput");
+    document.getElementById("savePhoto").addEventListener("click", async function () {
+      const files = Array.from(input.files || []);
+      if (!files.length) { alert("请先选择照片。"); return; }
+      let added = 0;
+      for (const file of files) {
+        try {
+          const data = await resizeImage(file, 1280, 0.78);
+          state.photos.push({ ts: Date.now(), name: file.name, data: data });
+          added++;
+        } catch (err) {
+          console.error(err);
+        }
+      }
+      if (added) {
+        const ok = save(KEYS.photos, state.photos);
+        if (!ok) { state.photos = state.photos.slice(0, state.photos.length - added); }
+        renderPhotos();
+      }
+      input.value = "";
+    });
+  }
+
+  /* ---------- 工具 ---------- */
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function bindBackup() {
+    const lightbox = document.getElementById("lightbox");
+    lightbox.addEventListener("click", function () { lightbox.classList.remove("open"); });
+
+    document.getElementById("exportBtn").addEventListener("click", function () {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "情侣时光备份-" + new Date().toISOString().slice(0, 10) + ".json";
+      a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    });
+
+    const importFile = document.getElementById("importFile");
+    document.getElementById("importBtn").addEventListener("click", function () { importFile.click(); });
+    importFile.addEventListener("change", function () {
+      const f = importFile.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (typeof data.miss !== "number" || !Array.isArray(data.meetings) || !Array.isArray(data.diaries) || !Array.isArray(data.photos)) {
+            throw new Error("格式不对");
+          }
+          if (confirm("导入会覆盖当前数据，确定继续吗？")) {
+            state = data;
+            save(KEYS.miss, state.miss);
+            save(KEYS.meetings, state.meetings);
+            save(KEYS.diaries, state.diaries);
+            save(KEYS.photos, state.photos);
+            refreshAll();
+          }
+        } catch (err) { alert("备份文件无效：" + err.message); }
+      };
+      reader.readAsText(f);
+      importFile.value = "";
+    });
+
+    document.getElementById("clearBtn").addEventListener("click", function () {
+      if (confirm("确定清空所有数据吗？此操作不可恢复！")) {
+        state = { miss: 0, meetings: [], diaries: [], photos: [] };
+        Object.values(KEYS).forEach(function (k) { localStorage.removeItem(k); });
+        refreshAll();
+      }
+    });
+  }
+
+  function refreshAll() {
+    document.getElementById("missCount").textContent = state.miss;
+    renderDiaries();
+    renderMeetings();
+    renderPhotos();
+    tick();
+  }
+
+  /* ---------- 启动 ---------- */
+  function init() {
+    seedHearts();
+    tick();
+    setInterval(tick, 1000);
+    bindMiss();
+    bindTabs();
+    initHeartShow();
+    renderMoods();
+    bindDiary();
+    bindMeet();
+    bindPhotos();
+    bindBackup();
+    renderDiaries();
+    renderMeetings();
+    renderPhotos();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
